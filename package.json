@@ -4,14 +4,16 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev:api": "tsx api/server.ts",
+    "dev:api": "sst dev --mode basic",
     "build:api": "tsc -p tsconfig.json",
     "dev:frontend": "npm run dev --prefix frontend",
-    "build:frontend": "npm run build --prefix frontend"
+    "build:frontend": "npm run build --prefix frontend",
+    "deploy": "sst deploy"
   },
   "dependencies": {
     "@hono/node-server": "^1.14.2",
-    "hono": "^4.8.12"
+    "hono": "^4.8.12",
+    "sst": "^3.17.13"
   },
   "devDependencies": {
     "@types/node": "^22.13.4",

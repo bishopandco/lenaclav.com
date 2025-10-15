@@ -3,10 +3,11 @@ const props = defineProps<{
   message: string;
 }>();
 
+const apiBaseUrl = (import.meta.env.VITE_API_URL ?? "").replace(/\/$/, "");
 const links = [
   {
     label: "API health check",
-    href: "http://localhost:8787/health",
+    href: apiBaseUrl ? `${apiBaseUrl}/health` : "/health",
   },
   {
     label: "Frontend dev server",
