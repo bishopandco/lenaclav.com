@@ -11,27 +11,12 @@
     @keydown="handleKey"
   >
     <div class="track" :style="trackStyle">
-      <section
+      <component
         v-for="(slide, index) in slides"
         :key="slide.id"
-        class="slide"
-        :class="[`slide--${slide.id}`, { active: index === activeIndex }]"
-      >
-        <div class="slide__content">
-          <p class="slide__kicker">{{ slide.kicker }}</p>
-          <h1 v-html="slide.title" />
-          <p class="slide__body">{{ slide.body }}</p>
-          <a
-            v-if="slide.cta"
-            class="slide__cta"
-            :href="slide.cta.href"
-            target="_blank"
-            rel="noreferrer"
-          >
-            {{ slide.cta.label }}
-          </a>
-        </div>
-      </section>
+        :is="slide.component"
+        :is-active="index === activeIndex"
+      />
     </div>
 
     <nav class="indicator" aria-label="Slide navigation">
@@ -50,64 +35,16 @@
 
 <script setup lang="ts">
 import { computed, nextTick, onBeforeUnmount, onMounted, ref } from "vue";
+import { slideDefinitions } from "./components/slides";
+import type { SlideDefinition } from "./components/slides";
 
-type Slide = {
-  id: string;
-  kicker: string;
-  title: string;
-  body: string;
-  cta?: {
-    label: string;
-    href: string;
-  };
-};
-
-const slides: Slide[] = [
-  {
-    id: "welcome",
-    kicker: "lenaclav.com",
-    title: "A minimal canvas<br />for ambitious ideas",
-    body: "Swipe, tap, and scroll through a focused vertical story built for modern devices.",
-    cta: {
-      label: "Explore the repo",
-      href: "https://github.com/bishopandco/lenaclav.com",
-    },
-  },
-  {
-    id: "vision",
-    kicker: "Vision",
-    title: "Design bold experiences<br />with obsessive detail",
-    body: "Start from a clean, responsive foundation that celebrates full-screen storytelling.",
-  },
-  {
-    id: "build",
-    kicker: "Build",
-    title: "Ship faster<br />with a fearless workflow",
-    body: "Combine the Vue frontend with a Hono API and deploy with confidence on SST.",
-  },
-  {
-    id: "collaborate",
-    kicker: "Collaborate",
-    title: "Bring teams together<br />around shared context",
-    body: "Slides keep the narrative tight while offering room for deep dives and demos.",
-  },
-  {
-    id: "launch",
-    kicker: "Launch",
-    title: "Progressive by default,<br />delightful by design",
-    body: "Customize the palette, add interactions, and turn this scaffold into your flagship experience.",
-    cta: {
-      label: "Start a new story",
-      href: "mailto:hello@lenaclav.com",
-    },
-  },
-];
+const slides: SlideDefinition[] = slideDefinitions;
 
 const activeIndex = ref(0);
 const viewportRef = ref<HTMLElement | null>(null);
 const transitionMs = 500;
 const swipeThreshold = 48;
-const wheelThreshold = 60;
+const wheelThreshold = 120;
 const lockBufferMs = 160;
 
 let interactionLock: ReturnType<typeof setTimeout> | null = null;
@@ -238,91 +175,6 @@ onBeforeUnmount(() => {
   flex: 1;
   transition: transform var(--transition-duration, 500ms)
     cubic-bezier(0.25, 0.8, 0.25, 1);
-}
-
-.slide {
-  height: 100vh;
-  width: 100vw;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: clamp(2.5rem, 6vw, 6rem);
-  box-sizing: border-box;
-}
-
-.slide__content {
-  max-width: min(640px, 90vw);
-  display: flex;
-  flex-direction: column;
-  gap: 1.5rem;
-}
-
-.slide__kicker {
-  margin: 0;
-  letter-spacing: 0.2em;
-  font-size: 0.8rem;
-  text-transform: uppercase;
-  color: rgba(226, 232, 240, 0.7);
-}
-
-.slide h1 {
-  margin: 0;
-  font-size: clamp(2.6rem, 8vw, 4.5rem);
-  line-height: 1.1;
-  font-weight: 700;
-}
-
-.slide__body {
-  margin: 0;
-  font-size: clamp(1rem, 4vw, 1.3rem);
-  line-height: 1.5;
-  color: rgba(226, 232, 240, 0.85);
-}
-
-.slide__cta {
-  align-self: flex-start;
-  padding: 0.85rem 1.75rem;
-  border-radius: 999px;
-  background: rgba(15, 23, 42, 0.85);
-  color: inherit;
-  text-decoration: none;
-  border: 1px solid rgba(226, 232, 240, 0.4);
-  transition: background 200ms ease, border-color 200ms ease, transform 200ms ease;
-}
-
-.slide__cta:hover,
-.slide__cta:focus {
-  background: rgba(226, 232, 240, 0.15);
-  border-color: rgba(226, 232, 240, 0.7);
-  transform: translateY(-1px);
-}
-
-.slide--welcome {
-  background: radial-gradient(circle at top, #1f2937, #0f172a);
-}
-
-.slide--vision {
-  background: radial-gradient(circle at 30% 30%, rgba(56, 189, 248, 0.4), transparent 55%),
-    radial-gradient(circle at 70% 70%, rgba(34, 197, 94, 0.35), transparent 60%),
-    #111827;
-}
-
-.slide--build {
-  background: radial-gradient(circle at 20% 80%, rgba(251, 191, 36, 0.3), transparent 45%),
-    radial-gradient(circle at 80% 20%, rgba(249, 168, 212, 0.35), transparent 55%),
-    #0f172a;
-}
-
-.slide--collaborate {
-  background: radial-gradient(circle at 20% 20%, rgba(168, 85, 247, 0.45), transparent 55%),
-    radial-gradient(circle at 80% 80%, rgba(236, 72, 153, 0.35), transparent 55%),
-    #111827;
-}
-
-.slide--launch {
-  background: radial-gradient(circle at 50% 20%, rgba(14, 165, 233, 0.4), transparent 60%),
-    radial-gradient(circle at 50% 80%, rgba(59, 130, 246, 0.35), transparent 65%),
-    #1e293b;
 }
 
 .indicator {
