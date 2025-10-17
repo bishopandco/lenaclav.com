@@ -1,10 +1,8 @@
 import type { Component } from "vue";
 
-import WelcomeSlide from "./WelcomeSlide.vue";
-import VisionSlide from "./VisionSlide.vue";
-import BuildSlide from "./BuildSlide.vue";
-import CollaborateSlide from "./CollaborateSlide.vue";
-import LaunchSlide from "./LaunchSlide.vue";
+import SlideOne from "./SlideOne.vue";
+import SlideTwo from "./SlideTwo.vue";
+import SlideThree from "./SlideThree.vue";
 
 export type SlideDefinition = {
   id: string;
@@ -13,9 +11,7 @@ export type SlideDefinition = {
 };
 
 export const slideDefinitions: SlideDefinition[] = [
-  { id: "welcome", kicker: "lenaclav.com", component: WelcomeSlide },
-  { id: "vision", kicker: "Vision", component: VisionSlide },
-  { id: "build", kicker: "Build", component: BuildSlide },
-  { id: "collaborate", kicker: "Collaborate", component: CollaborateSlide },
-  { id: "launch", kicker: "Launch", component: LaunchSlide },
+  { id: "slide-1", kicker: "Slide 1", component: SlideOne },
+  { id: "slide-2", kicker: "Slide 2", component: SlideTwo },
+  { id: "slide-3", kicker: "Slide 3", component: SlideThree },
 ];

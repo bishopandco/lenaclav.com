@@ -1,36 +1,54 @@
 <template>
-  <main
-    ref="viewportRef"
-    class="viewport"
-    tabindex="0"
-    aria-live="polite"
-    @wheel="handleWheel"
-    @touchstart="handleTouchStart"
-    @touchmove="handleTouchMove"
-    @touchend="handleTouchEnd"
-    @keydown="handleKey"
-  >
-    <div class="track" :style="trackStyle">
-      <component
-        v-for="(slide, index) in slides"
-        :key="slide.id"
-        :is="slide.component"
-        :is-active="index === activeIndex"
-      />
-    </div>
+  <div class="relative h-screen w-screen">
+    <header class="fixed inset-x-0 top-0 z-50 flex items-center justify-between bg-black/60 px-6 py-4 text-white backdrop-blur">
+      <div class="text-lg font-semibold tracking-widest">LENA CLAV</div>
+      <nav aria-label="Primary">
+        <ul class="flex items-center gap-3 text-sm uppercase tracking-wide">
+          <li><a href="#events" class="hover:underline">events</a></li>
+          <li aria-hidden="true">|</li>
+          <li><a href="#contact" class="hover:underline">contact</a></li>
+          <li aria-hidden="true">|</li>
+          <li><a href="#merch" class="hover:underline">merch</a></li>
+        </ul>
+      </nav>
+    </header>
 
-    <nav class="indicator" aria-label="Slide navigation">
-      <button
-        v-for="(slide, index) in slides"
-        :key="`indicator-${slide.id}`"
-        type="button"
-        class="indicator__dot"
-        :class="{ active: index === activeIndex }"
-        @click="goToSlide(index)"
-        :aria-label="`Go to ${slide.kicker}`"
-      />
-    </nav>
-  </main>
+    <main
+      ref="viewportRef"
+      class="relative flex h-full w-full overflow-hidden touch-none outline-none focus:outline-none"
+      tabindex="0"
+      aria-live="polite"
+      @wheel="handleWheel"
+      @touchstart="handleTouchStart"
+      @touchmove="handleTouchMove"
+      @touchend="handleTouchEnd"
+      @keydown="handleKey"
+    >
+      <div class="flex h-full w-full flex-col" :style="trackStyle">
+        <component
+          v-for="(slide, index) in slides"
+          :key="slide.id"
+          :is="slide.component"
+          :is-active="index === activeIndex"
+        />
+      </div>
+
+      <nav
+        class="absolute right-6 top-1/2 flex -translate-y-1/2 flex-col gap-3"
+        aria-label="Slide navigation"
+      >
+        <button
+          v-for="(slide, index) in slides"
+          :key="`indicator-${slide.id}`"
+          type="button"
+          class="h-3 w-3 rounded-full border border-black"
+          :class="{ 'bg-black': index === activeIndex }"
+          @click="goToSlide(index)"
+          :aria-label="`Go to ${slide.kicker}`"
+        />
+      </nav>
+    </main>
+  </div>
 </template>
 
 <script setup lang="ts">
@@ -55,9 +73,11 @@ const currentTransitionMs = ref(transitionMs);
 
 const totalSlides = slides.length;
 
+const trackTransition = "cubic-bezier(0.25, 0.8, 0.25, 1)";
+
 const trackStyle = computed(() => ({
   transform: `translateY(-${activeIndex.value * 100}vh)`,
-  "--transition-duration": `${currentTransitionMs.value}ms`,
+  transition: `transform ${currentTransitionMs.value}ms ${trackTransition}`,
 }));
 
 const releaseLock = () => {
@@ -156,63 +176,3 @@ onBeforeUnmount(() => {
   }
 });
 </script>
-
-<style scoped>
-.viewport {
-  position: relative;
-  display: flex;
-  height: 100vh;
-  width: 100vw;
-  overflow: hidden;
-  background: #0f172a;
-  color: #e2e8f0;
-  font-family: "Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  outline: none;
-  touch-action: none;
-}
-
-.track {
-  flex: 1;
-  transition: transform var(--transition-duration, 500ms)
-    cubic-bezier(0.25, 0.8, 0.25, 1);
-}
-
-.indicator {
-  position: absolute;
-  top: 50%;
-  right: clamp(1rem, 4vw, 2.5rem);
-  transform: translateY(-50%);
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-}
-
-.indicator__dot {
-  appearance: none;
-  width: 0.75rem;
-  height: 0.75rem;
-  border-radius: 50%;
-  border: 2px solid rgba(226, 232, 240, 0.6);
-  background: transparent;
-  cursor: pointer;
-  transition: transform 200ms ease, background 200ms ease, border-color 200ms ease;
-}
-
-.indicator__dot.active {
-  transform: scale(1.2);
-  background: rgba(226, 232, 240, 0.9);
-  border-color: rgba(226, 232, 240, 0.9);
-}
-
-@media (max-width: 640px) {
-  .indicator {
-    right: 1rem;
-    gap: 0.6rem;
-  }
-
-  .indicator__dot {
-    width: 0.6rem;
-    height: 0.6rem;
-  }
-}
-</style>
