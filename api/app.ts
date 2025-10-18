@@ -1,6 +1,7 @@
 import { Hono } from "hono";
 import type { Context, Next } from "hono";
 import { registerRoutes } from "./routes";
+import { registerApp } from "./register";
 
 const requestLogger = async (c: Context, next: Next) => {
   const start = Date.now();
@@ -14,6 +15,7 @@ export const createApp = () => {
 
   app.use("*", requestLogger);
 
+  registerApp(app);
   registerRoutes(app);
 
   return app;

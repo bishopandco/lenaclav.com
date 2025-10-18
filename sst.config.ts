@@ -19,10 +19,39 @@ export default $config({
         ? "lenaclav.com"
         : `${$app.stage}.lenaclav.com`;
 
+    const table = new sst.aws.Dynamo("LenaclavTable", {
+      fields: {
+        pk: "string",
+        sk: "string",
+        gsi1pk: "string",
+        gsi1sk: "string",
+        gsi2pk: "string",
+        gsi2sk: "string",
+      },
+      primaryIndex: {
+        hashKey: "pk",
+        rangeKey: "sk",
+      },
+      globalIndexes: {
+        "gsi1pk-gsi1sk-index": {
+          hashKey: "gsi1pk",
+          rangeKey: "gsi1sk",
+        },
+        "gsi2pk-gsi2sk-index": {
+          hashKey: "gsi2pk",
+          rangeKey: "gsi2sk",
+        },
+      },
+    });
+
     const api = new sst.aws.Function("Api", {
       handler: "api/index.handler",
       runtime: "nodejs20.x",
       url: true,
+      link: [table],
+      environment: {
+        DYNAMODB_TABLE_NAME: table.name,
+      },
     });
 
     const frontend = new sst.aws.StaticSite("Frontend", {
