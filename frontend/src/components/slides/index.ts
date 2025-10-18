@@ -11,7 +11,7 @@ export type SlideDefinition = {
 };
 
 export const slideDefinitions: SlideDefinition[] = [
-  { id: "slide-1", kicker: "Slide 1", component: SlideOne },
-  { id: "slide-2", kicker: "Slide 2", component: SlideTwo },
-  { id: "slide-3", kicker: "Slide 3", component: SlideThree },
+  { id: "events", kicker: "Events", component: SlideOne },
+  { id: "contact", kicker: "Contact", component: SlideTwo },
+  { id: "merch", kicker: "Merch", component: SlideThree },
 ];
