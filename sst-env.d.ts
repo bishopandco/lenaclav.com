@@ -14,6 +14,10 @@ declare module "sst" {
       "type": "sst.aws.StaticSite"
       "url": string
     }
+    "LenaclavTable": {
+      "name": string
+      "type": "sst.aws.Dynamo"
+    }
   }
 }
 /// <reference path="sst-env.d.ts" />
