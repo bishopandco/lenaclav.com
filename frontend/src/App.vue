@@ -49,7 +49,7 @@
       >
         <div>
           <p class="text-xs uppercase tracking-[0.35em] text-white/50">Stream</p>
-          <p class="mt-1 text-sm font-medium tracking-wide text-white">Latest Release</p>
+          <p class="mt-1 text-sm font-medium tracking-wide text-white">Spring Return</p>
         </div>
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="h-6 w-6 fill-current" aria-hidden="true">
           <path
@@ -65,7 +65,7 @@
       >
         <div>
           <p class="text-xs uppercase tracking-[0.35em] text-white/50">Stream</p>
-          <p class="mt-1 text-sm font-medium tracking-wide text-white">Past Release</p>
+          <p class="mt-1 text-sm font-medium tracking-wide text-white">Juno / Lie To Me</p>
         </div>
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="h-6 w-6 fill-current" aria-hidden="true">
           <path
