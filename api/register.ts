@@ -4,6 +4,8 @@ import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
 import { DynamoDBDocumentClient } from "@aws-sdk/lib-dynamodb";
 import { PostsController } from "./controllers/PostsController";
 import { PostModel } from "./models/PostModel";
+import { BlogsController } from "./controllers/BlogsController";
+import { BlogModel } from "./models/BlogModel";
 
 export const registerApp = (app: Hono) => {
   const tableName = process.env.DYNAMODB_TABLE_NAME;
@@ -21,7 +23,8 @@ export const registerApp = (app: Hono) => {
   const documentClient = DynamoDBDocumentClient.from(rawClient);
 
   BaseModel.configure({ client: documentClient, table: tableName });
-  BaseModel.register(PostModel);
+  BaseModel.register(PostModel, BlogModel);
 
   PostsController.routes(app);
+  BlogsController.routes(app);
 };
