@@ -33,6 +33,23 @@ const router = createRouter({
           redirect: { name: "admin-blog-list" },
         },
         {
+          path: "events",
+          name: "admin-event-list",
+          component: () => import("./views/admin/EventAdminListView.vue"),
+        },
+        {
+          path: "events/new",
+          name: "admin-event-new",
+          component: () => import("./views/admin/EventAdminEditView.vue"),
+          props: { mode: "create" },
+        },
+        {
+          path: "events/:id",
+          name: "admin-event-edit",
+          component: () => import("./views/admin/EventAdminEditView.vue"),
+          props: (route) => ({ mode: "edit", id: route.params.id }),
+        },
+        {
           path: "blogs",
           name: "admin-blog-list",
           component: () => import("./views/admin/BlogAdminListView.vue"),

@@ -3,6 +3,7 @@
     <header class="admin-header">
       <RouterLink class="admin-header__logo" to="/">LENA CLAV</RouterLink>
       <nav class="admin-nav" aria-label="Admin navigation">
+        <RouterLink class="admin-nav__link" to="/admin/events">Events</RouterLink>
         <RouterLink class="admin-nav__link" to="/admin/blogs">Blog Posts</RouterLink>
         <RouterLink class="admin-nav__link" to="/blog">View Site</RouterLink>
       </nav>

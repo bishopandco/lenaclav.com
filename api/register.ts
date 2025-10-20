@@ -2,10 +2,12 @@ import { Hono } from "hono";
 import { BaseModel } from "@bishop-and-co/dmvc";
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
 import { DynamoDBDocumentClient } from "@aws-sdk/lib-dynamodb";
-import { PostsController } from "./controllers/PostsController";
-import { PostModel } from "./models/PostModel";
 import { BlogsController } from "./controllers/BlogsController";
 import { BlogModel } from "./models/BlogModel";
+import { EventsController } from "./controllers/EventsController";
+import { EventModel } from "./models/EventModel";
+import { PostsController } from "./controllers/PostsController";
+import { PostModel } from "./models/PostModel";
 
 export const registerApp = (app: Hono) => {
   const tableName = process.env.DYNAMODB_TABLE_NAME;
@@ -23,8 +25,9 @@ export const registerApp = (app: Hono) => {
   const documentClient = DynamoDBDocumentClient.from(rawClient);
 
   BaseModel.configure({ client: documentClient, table: tableName });
-  BaseModel.register(PostModel, BlogModel);
+  BaseModel.register(PostModel, BlogModel, EventModel);
 
   PostsController.routes(app);
   BlogsController.routes(app);
+  EventsController.routes(app);
 };
