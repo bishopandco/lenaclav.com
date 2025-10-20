@@ -23,8 +23,8 @@
         <p class="text-xs uppercase tracking-[0.4em] text-white/70">Upcoming</p>
         <h2 class="text-4xl font-semibold tracking-wide md:text-5xl">Events</h2>
         <p class="text-sm text-white/70 md:text-base">
-          The tour calendar is still FPO, but here’s how the energy is shaping up. Dates,
-          venues, and vibe checks are placeholders—swap in final details when they’re locked.
+          Tour drops update here first. Lock in the cities, rooms, and set times as new shows go
+          live.
         </p>
       </header>
 
@@ -199,7 +199,7 @@ const displayEvents = computed(() =>
       id: event.event,
       title: event.title ?? "Untitled Event",
       description: event.description ?? "Details coming soon.",
-      location: (event.location ?? "Location TBA").toUpperCase(),
+      location: event.location?.trim() || "Location TBA",
       dateLabel: makeDateLabel(start),
       timeBadge: makeStartBadge(start),
       secondaryBadge: makeSecondaryBadge(start, end),

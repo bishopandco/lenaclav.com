@@ -1,9 +1,10 @@
 import { Entity, DocumentClient } from "electrodb";
+import type { Schema } from "electrodb";
 import { z } from "zod";
 import { ulid } from "ulid";
 import { BaseModel } from "@bishop-and-co/dmvc";
 
-const BlogEntity = new Entity(
+const BlogEntity = new Entity<string, string, string, Schema<string, string, string>>(
   {
     model: {
       entity: "blog",
@@ -48,7 +49,7 @@ const BlogSchema = z.object({
 export class BlogModel extends BaseModel<typeof BlogSchema> {
   constructor(client: DocumentClient, table: string) {
     super(
-      BlogEntity as any,
+      BlogEntity,
       BlogSchema,
       z.object({
         blog: z.string(),
