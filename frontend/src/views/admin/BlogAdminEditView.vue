@@ -342,7 +342,6 @@ const previewReadingTime = computed(() => {
   return minutes ? `${minutes} min read` : "";
 });
 </script>
-</script>
 
 <style scoped>
 .admin-edit__header {
