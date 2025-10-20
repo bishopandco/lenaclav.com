@@ -151,6 +151,7 @@ const emptyForm = () => ({
   title: "",
   body: "",
   publishedAt: "",
+  originalPublishedAt: "",
 });
 
 const form = reactive(emptyForm());
@@ -182,6 +183,7 @@ const loadPost = async (postId: string) => {
     form.blog = payload.blog;
     form.title = payload.title;
     form.body = payload.body;
+    form.originalPublishedAt = payload.publishedAt ?? "";
     form.publishedAt = payload.publishedAt
       ? toLocalInputValue(payload.publishedAt)
       : "";
@@ -234,7 +236,11 @@ const handleSubmit = async () => {
   const resolvedPublishedAt = form.publishedAt
     ? new Date(form.publishedAt).toISOString()
     : new Date().toISOString();
-  payload.publishedAt = resolvedPublishedAt;
+  const keyPublishedAt =
+    props.mode === "edit" && form.originalPublishedAt
+      ? form.originalPublishedAt
+      : resolvedPublishedAt;
+  payload.publishedAt = keyPublishedAt;
 
   try {
     if (props.mode === "create") {
@@ -264,6 +270,8 @@ const handleSubmit = async () => {
       if (!response.ok) {
         throw new Error(`Unable to update post (${response.status})`);
       }
+      form.originalPublishedAt = keyPublishedAt;
+      form.publishedAt = keyPublishedAt ? toLocalInputValue(keyPublishedAt) : "";
       state.success = true;
     }
   } catch (error) {
