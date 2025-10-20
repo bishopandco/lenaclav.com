@@ -14,6 +14,11 @@ const router = createRouter({
       component: () => import("./views/BlogIndexView.vue"),
     },
     {
+      path: "/env",
+      name: "env",
+      component: () => import("./views/EnvView.vue"),
+    },
+    {
       path: "/blog/:id",
       name: "blog-show",
       component: () => import("./views/BlogShowView.vue"),

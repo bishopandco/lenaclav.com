@@ -1,9 +1,10 @@
 <template>
   <section
     id="contact"
-    class="relative flex h-screen w-screen flex-none items-center justify-center overflow-hidden border border-black border-solid"
+    class="relative flex h-screen w-screen flex-none items-center justify-center overflow-hidden border border-black border-solid bg-black"
   >
     <video
+      v-if="!props.prefersReducedMotion"
       class="pointer-events-none absolute inset-0 h-full w-full object-cover"
       :src="videoSrc"
       autoplay
@@ -12,6 +13,7 @@
       playsinline
       aria-hidden="true"
     />
+    <div v-else class="absolute inset-0 bg-gradient-to-br from-black via-black/85 to-black/60" aria-hidden="true" />
     <div class="absolute inset-0 bg-black/75" aria-hidden="true" />
 
     <div class="relative z-10 flex w-full max-w-5xl flex-col gap-12 px-6 pt-24 text-white md:px-12 md:pt-32">
@@ -97,5 +99,5 @@
 <script setup lang="ts">
 import videoSrc from "../../assets/ScreenRecording_04-06-2025 00-08-43_1.mp4";
 
-defineProps<{ isActive: boolean }>();
+const props = defineProps<{ isActive: boolean; prefersReducedMotion: boolean }>();
 </script>

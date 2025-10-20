@@ -6,7 +6,7 @@
   "scripts": {
     "dev:api": "sst dev --mode basic",
     "build:api": "tsc -p tsconfig.json",
-    "dev:frontend": "npm run dev --prefix frontend",
+    "dev:frontend": "sst dev 'npm run dev --prefix frontend'",
     "build:frontend": "npm run build --prefix frontend",
     "deploy": "sst deploy"
   },

@@ -52,6 +52,46 @@
         ></textarea>
       </div>
 
+      <section class="admin-edit__preview" aria-live="polite">
+        <header class="admin-edit__preview-header">
+          <p class="admin-edit__preview-eyebrow">Live preview</p>
+          <h2 class="admin-edit__preview-title">{{ previewTitle }}</h2>
+          <div class="admin-edit__preview-meta">
+            <span>{{ previewPublishedLabel }}</span>
+            <span v-if="previewReadingTime">{{ previewReadingTime }}</span>
+          </div>
+        </header>
+        <div v-if="previewBlocks.length === 0" class="admin-edit__preview-empty">
+          Start writing to see the formatted article preview.
+        </div>
+        <div v-else class="admin-edit__preview-body">
+          <template v-for="(block, index) in previewBlocks" :key="`${block.type}-${index}`">
+            <h3
+              v-if="block.type === 'heading' && block.level <= 2"
+              class="admin-edit__preview-heading admin-edit__preview-heading--level-2"
+            >
+              {{ block.text }}
+            </h3>
+            <h4
+              v-else-if="block.type === 'heading' && block.level >= 3"
+              class="admin-edit__preview-heading admin-edit__preview-heading--level-3"
+            >
+              {{ block.text }}
+            </h4>
+            <blockquote
+              v-else-if="block.type === 'quote'"
+              class="admin-edit__preview-quote"
+            >
+              {{ block.text }}
+            </blockquote>
+            <ul v-else-if="block.type === 'list'" class="admin-edit__preview-list">
+              <li v-for="(item, itemIndex) in block.items" :key="itemIndex">{{ item }}</li>
+            </ul>
+            <p v-else class="admin-edit__preview-paragraph">{{ block.text }}</p>
+          </template>
+        </div>
+      </section>
+
       <div class="admin-edit__footer">
         <button
           type="submit"
@@ -84,6 +124,13 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive, watch } from "vue";
 import { RouterLink, useRouter } from "vue-router";
+import {
+  estimateReadingMinutes,
+  formatPublishedDate,
+  parseBlogBody,
+} from "../../lib/blog";
+import type { BlogBodyBlock } from "../../lib/blog";
+import { API_BASE_URL } from "../../lib/env";
 
 type Mode = "create" | "edit";
 
@@ -96,9 +143,6 @@ const props = withDefaults(
     mode: "create",
   },
 );
-
-const API_BASE =
-  (import.meta.env.VITE_API_URL as string | undefined)?.replace(/\/$/, "") ?? "";
 
 const router = useRouter();
 
@@ -125,7 +169,9 @@ const loadPost = async (postId: string) => {
   state.error = null;
   state.success = false;
   try {
-    const response = await fetch(`${API_BASE}/blogs/${encodeURIComponent(postId)}`);
+    const response = await fetch(
+      `${API_BASE_URL}/blogs/${encodeURIComponent(postId)}`,
+    );
     if (response.status === 404) {
       throw new Error("Post not found.");
     }
@@ -192,7 +238,7 @@ const handleSubmit = async () => {
 
   try {
     if (props.mode === "create") {
-      const response = await fetch(`${API_BASE}/blogs`, {
+      const response = await fetch(`${API_BASE_URL}/blogs`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
@@ -207,7 +253,7 @@ const handleSubmit = async () => {
         params: { id: created.blog },
       });
     } else {
-      const response = await fetch(`${API_BASE}/blogs`, {
+      const response = await fetch(`${API_BASE_URL}/blogs`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -244,7 +290,7 @@ const handleDelete = async () => {
   state.error = null;
   try {
     const response = await fetch(
-      `${API_BASE}/blogs/${encodeURIComponent(props.id)}`,
+      `${API_BASE_URL}/blogs/${encodeURIComponent(props.id)}`,
       {
         method: "DELETE",
       },
@@ -275,6 +321,27 @@ const toLocalInputValue = (iso: string) => {
   const minutes = pad(date.getMinutes());
   return `${year}-${month}-${day}T${hours}:${minutes}`;
 };
+
+const previewBlocks = computed<BlogBodyBlock[]>(() => parseBlogBody(form.body));
+
+const previewTitle = computed(() => (form.title.trim() ? form.title.trim() : "Untitled post"));
+
+const previewPublishedLabel = computed(() => {
+  if (!form.publishedAt) {
+    return "Draft";
+  }
+  const parsed = new Date(form.publishedAt);
+  if (Number.isNaN(parsed.getTime())) {
+    return form.publishedAt;
+  }
+  return formatPublishedDate(parsed.toISOString());
+});
+
+const previewReadingTime = computed(() => {
+  const minutes = estimateReadingMinutes(form.body);
+  return minutes ? `${minutes} min read` : "";
+});
+</script>
 </script>
 
 <style scoped>
@@ -356,6 +423,107 @@ const toLocalInputValue = (iso: string) => {
 .admin-edit__hint {
   font-size: 0.75rem;
   opacity: 0.55;
+}
+
+.admin-edit__preview {
+  border-radius: 1.5rem;
+  border: 1px solid rgba(148, 163, 184, 0.25);
+  background: rgba(15, 23, 42, 0.5);
+  padding: 1.85rem;
+  display: grid;
+  gap: 1.25rem;
+}
+
+.admin-edit__preview-header {
+  display: grid;
+  gap: 0.6rem;
+}
+
+.admin-edit__preview-eyebrow {
+  margin: 0;
+  text-transform: uppercase;
+  letter-spacing: 0.35rem;
+  font-size: 0.65rem;
+  opacity: 0.55;
+}
+
+.admin-edit__preview-title {
+  margin: 0;
+  font-size: 1.4rem;
+  letter-spacing: 0.1rem;
+  text-transform: uppercase;
+}
+
+.admin-edit__preview-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.85rem;
+  font-size: 0.7rem;
+  letter-spacing: 0.18rem;
+  text-transform: uppercase;
+  opacity: 0.6;
+}
+
+.admin-edit__preview-empty {
+  font-size: 0.85rem;
+  letter-spacing: 0.05rem;
+  opacity: 0.7;
+}
+
+.admin-edit__preview-body {
+  display: grid;
+  gap: 1.1rem;
+  font-size: 0.95rem;
+  line-height: 1.7;
+  opacity: 0.85;
+}
+
+.admin-edit__preview-paragraph {
+  margin: 0;
+}
+
+.admin-edit__preview-heading {
+  margin: 0;
+  text-transform: uppercase;
+  letter-spacing: 0.25rem;
+}
+
+.admin-edit__preview-heading--level-2 {
+  font-size: 1.05rem;
+}
+
+.admin-edit__preview-heading--level-3 {
+  font-size: 0.9rem;
+  opacity: 0.75;
+}
+
+.admin-edit__preview-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  gap: 0.55rem;
+}
+
+.admin-edit__preview-list li {
+  position: relative;
+  padding-left: 1.35rem;
+}
+
+.admin-edit__preview-list li::before {
+  content: "•";
+  position: absolute;
+  left: 0;
+  top: 0;
+  color: rgba(148, 163, 184, 0.6);
+}
+
+.admin-edit__preview-quote {
+  margin: 0;
+  padding-left: 1rem;
+  border-left: 3px solid rgba(148, 163, 184, 0.35);
+  font-style: italic;
+  opacity: 0.75;
 }
 
 .admin-edit__footer {

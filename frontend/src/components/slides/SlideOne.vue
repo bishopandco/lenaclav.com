@@ -1,9 +1,10 @@
 <template>
   <section
     id="events"
-    class="relative flex h-screen w-screen flex-none items-center justify-center overflow-hidden border border-black border-solid"
+    class="relative flex h-screen w-screen flex-none items-center justify-center overflow-hidden border border-black border-solid bg-black"
   >
     <video
+      v-if="!props.prefersReducedMotion"
       class="pointer-events-none absolute inset-0 h-full w-full object-cover"
       :src="videoSrc"
       autoplay
@@ -12,6 +13,7 @@
       playsinline
       aria-hidden="true"
     />
+    <div v-else class="absolute inset-0 bg-gradient-to-br from-black via-black/80 to-black/60" aria-hidden="true" />
     <div class="absolute inset-0 bg-black/70" aria-hidden="true" />
 
     <div
@@ -59,7 +61,7 @@
 <script setup lang="ts">
 import videoSrc from "../../assets/IMG_2778.mp4";
 
-defineProps<{ isActive: boolean }>();
+const props = defineProps<{ isActive: boolean; prefersReducedMotion: boolean }>();
 
 const events = [
   {

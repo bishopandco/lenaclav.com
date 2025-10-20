@@ -1,9 +1,11 @@
 <script setup lang="ts">
+import { API_BASE_URL } from "../lib/env";
+
 const props = defineProps<{
   message: string;
 }>();
 
-const apiBaseUrl = (import.meta.env.VITE_API_URL ?? "").replace(/\/$/, "");
+const apiBaseUrl = API_BASE_URL;
 const links = [
   {
     label: "API health check",

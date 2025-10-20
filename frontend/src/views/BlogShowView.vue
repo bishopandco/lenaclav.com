@@ -20,11 +20,58 @@
             {{ formatPublished(state.post.publishedAt) }}
           </time>
           <span class="post-article__id">ID: {{ state.post.blog }}</span>
+          <span v-if="readingTimeLabel" class="post-article__reading">{{ readingTimeLabel }}</span>
         </div>
-        <div class="post-article__body">
-          <p v-for="(paragraph, index) in paragraphs" :key="index">
-            {{ paragraph }}
+
+        <div class="post-article__actions" aria-live="polite">
+          <button
+            type="button"
+            class="post-article__action"
+            :disabled="copyFeedback === 'copied'"
+            @click="copyLink"
+          >
+            {{ copyButtonText }}
+          </button>
+          <button
+            v-if="canShare"
+            type="button"
+            class="post-article__action post-article__action--secondary"
+            @click="sharePost"
+          >
+            Share
+          </button>
+          <p v-if="copyFeedbackMessage" class="post-article__feedback" role="status">
+            {{ copyFeedbackMessage }}
           </p>
+          <p v-if="shareError" class="post-article__feedback post-article__feedback--error" role="alert">
+            {{ shareError }}
+          </p>
+        </div>
+
+        <div class="post-article__body">
+          <template v-for="(block, index) in contentBlocks" :key="`${block.type}-${index}`">
+            <h2
+              v-if="block.type === 'heading' && block.level <= 2"
+              class="post-article__heading post-article__heading--level-2"
+            >
+              {{ block.text }}
+            </h2>
+            <h3
+              v-else-if="block.type === 'heading' && block.level >= 3"
+              class="post-article__heading post-article__heading--level-3"
+            >
+              {{ block.text }}
+            </h3>
+            <blockquote v-else-if="block.type === 'quote'" class="post-article__quote">
+              {{ block.text }}
+            </blockquote>
+            <ul v-else-if="block.type === 'list'" class="post-article__list">
+              <li v-for="(item, itemIndex) in block.items" :key="itemIndex">{{ item }}</li>
+            </ul>
+            <p v-else class="post-article__paragraph">
+              {{ block.text }}
+            </p>
+          </template>
         </div>
       </article>
       <div v-else class="post-status" role="alert">
@@ -35,8 +82,16 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, reactive, watch } from "vue";
+import { computed, onBeforeUnmount, onMounted, reactive, ref, watch } from "vue";
 import { RouterLink } from "vue-router";
+import {
+  buildExcerpt,
+  estimateReadingMinutes,
+  formatPublishedDate,
+  parseBlogBody,
+} from "../lib/blog";
+import type { BlogBodyBlock } from "../lib/blog";
+import { API_BASE_URL } from "../lib/env";
 
 type BlogResponse = {
   blog: string;
@@ -49,9 +104,6 @@ const props = defineProps<{
   id: string;
 }>();
 
-const API_BASE =
-  (import.meta.env.VITE_API_URL as string | undefined)?.replace(/\/$/, "") ?? "";
-
 const state = reactive<{
   loading: boolean;
   error: string | null;
@@ -62,12 +114,18 @@ const state = reactive<{
   post: null,
 });
 
+const copyFeedback = ref<"idle" | "copied" | "error">("idle");
+const shareError = ref<string | null>(null);
+let copyReset: ReturnType<typeof setTimeout> | null = null;
+
 const fetchPost = async (postId: string) => {
   state.loading = true;
   state.error = null;
   state.post = null;
   try {
-    const response = await fetch(`${API_BASE}/blogs/${encodeURIComponent(postId)}`);
+    const response = await fetch(
+      `${API_BASE_URL}/blogs/${encodeURIComponent(postId)}`,
+    );
     if (response.status === 404) {
       state.post = null;
       state.loading = false;
@@ -88,42 +146,124 @@ const fetchPost = async (postId: string) => {
 };
 
 onMounted(() => {
-  fetchPost(props.id);
+  void fetchPost(props.id);
 });
 
 watch(
   () => props.id,
   (nextId) => {
-    fetchPost(nextId);
+    void fetchPost(nextId);
   },
 );
 
-const paragraphs = computed(() => {
+const contentBlocks = computed<BlogBodyBlock[]>(() => {
   if (!state.post) {
     return [];
   }
-  return state.post.body
-    .split(/\r?\n/)
-    .map((para) => para.trim())
-    .filter(Boolean);
+  return parseBlogBody(state.post.body);
 });
 
-const formatPublished = (value?: string) => {
-  if (!value) {
-    return "Unpublished";
-  }
+const readingMinutes = computed(() =>
+  state.post ? estimateReadingMinutes(state.post.body) : 0,
+);
+const readingTimeLabel = computed(() => (readingMinutes.value ? `${readingMinutes.value} min read` : ""));
 
-  const timestamp = Date.parse(value);
-  if (Number.isNaN(timestamp)) {
-    return value;
-  }
+const shareSummary = computed(() => (state.post ? buildExcerpt(state.post.body) : ""));
 
-  return new Intl.DateTimeFormat("en-US", {
-    year: "numeric",
-    month: "short",
-    day: "2-digit",
-  }).format(timestamp);
+const canShare = computed(
+  () => typeof navigator !== "undefined" && typeof navigator.share === "function",
+);
+
+const resolvePostUrl = () => {
+  if (typeof window === "undefined" || !state.post) {
+    return null;
+  }
+  return `${window.location.origin}/blog/${state.post.blog}`;
 };
+
+const copyButtonText = computed(() =>
+  copyFeedback.value === "copied" ? "Link copied" : "Copy link",
+);
+
+const copyFeedbackMessage = computed(() => {
+  if (copyFeedback.value === "copied") {
+    return "Link copied to clipboard";
+  }
+  if (copyFeedback.value === "error") {
+    return "Copy failed. Try again or use share.";
+  }
+  return "";
+});
+
+const copyLink = async () => {
+  const url = resolvePostUrl();
+  if (!url) {
+    return;
+  }
+
+  if (copyReset) {
+    clearTimeout(copyReset);
+    copyReset = null;
+  }
+
+  try {
+    if (typeof navigator !== "undefined" && navigator.clipboard?.writeText) {
+      await navigator.clipboard.writeText(url);
+      copyFeedback.value = "copied";
+    } else {
+      throw new Error("Clipboard unavailable");
+    }
+  } catch (error) {
+    copyFeedback.value = "error";
+    if (typeof window !== "undefined" && typeof window.prompt === "function") {
+      window.prompt("Copy this link", url);
+    }
+  }
+
+  copyReset = setTimeout(() => {
+    copyFeedback.value = "idle";
+    copyReset = null;
+  }, 2400);
+};
+
+const sharePost = async () => {
+  const url = resolvePostUrl();
+  if (!url || !state.post) {
+    return;
+  }
+
+  if (!canShare.value) {
+    await copyLink();
+    return;
+  }
+
+  try {
+    shareError.value = null;
+    const typedNavigator = navigator as Navigator & { share: (data: ShareData) => Promise<void> };
+    await typedNavigator.share({
+      title: state.post.title,
+      text: shareSummary.value,
+      url,
+    });
+  } catch (error) {
+    if (error instanceof DOMException && error.name === "AbortError") {
+      return;
+    }
+    shareError.value =
+      error instanceof Error
+        ? error.message
+        : "Unable to open the native share dialog. Copy the link instead.";
+  }
+};
+
+const formatPublished = formatPublishedDate;
+
+onBeforeUnmount(() => {
+  if (copyReset) {
+    clearTimeout(copyReset);
+    copyReset = null;
+  }
+});
 </script>
 
 <style scoped>
@@ -207,12 +347,12 @@ const formatPublished = (value?: string) => {
 .post-article__meta {
   display: flex;
   flex-wrap: wrap;
-  gap: 1.5rem;
+  gap: 1.25rem;
   text-transform: uppercase;
   letter-spacing: 0.24rem;
   font-size: 0.75rem;
   opacity: 0.6;
-  margin-bottom: 2.25rem;
+  margin-bottom: 2rem;
 }
 
 .post-article__id {
@@ -220,13 +360,116 @@ const formatPublished = (value?: string) => {
     Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
 }
 
+.post-article__reading {
+  color: #cbd5f5;
+}
+
+.post-article__actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 2rem;
+}
+
+.post-article__action {
+  border-radius: 9999px;
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  background: rgba(15, 23, 42, 0.6);
+  color: inherit;
+  padding: 0.6rem 1.3rem;
+  text-transform: uppercase;
+  letter-spacing: 0.22rem;
+  font-size: 0.7rem;
+  cursor: pointer;
+  transition: background 160ms ease, transform 160ms ease, border-color 160ms ease;
+}
+
+.post-article__action:hover:enabled {
+  background: rgba(56, 189, 248, 0.18);
+  border-color: rgba(56, 189, 248, 0.45);
+  transform: translateY(-1px);
+}
+
+.post-article__action:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.post-article__action--secondary {
+  border-color: rgba(148, 163, 184, 0.25);
+  background: rgba(148, 163, 184, 0.12);
+}
+
+.post-article__feedback {
+  font-size: 0.75rem;
+  letter-spacing: 0.18rem;
+  text-transform: uppercase;
+  opacity: 0.7;
+}
+
+.post-article__feedback--error {
+  color: #f87171;
+}
+
 .post-article__body {
   font-size: 1.1rem;
   line-height: 1.85;
   letter-spacing: 0.02rem;
   display: grid;
-  gap: 1.5rem;
+  gap: 1.7rem;
   opacity: 0.9;
+}
+
+.post-article__paragraph {
+  margin: 0;
+}
+
+.post-article__heading {
+  margin: 0;
+  text-transform: uppercase;
+  letter-spacing: 0.32rem;
+}
+
+.post-article__heading--level-2 {
+  font-size: 1.35rem;
+}
+
+.post-article__heading--level-3 {
+  font-size: 1.1rem;
+  letter-spacing: 0.26rem;
+  opacity: 0.8;
+}
+
+.post-article__list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  gap: 0.75rem;
+}
+
+.post-article__list li {
+  position: relative;
+  padding-left: 1.5rem;
+}
+
+.post-article__list li::before {
+  content: "•";
+  position: absolute;
+  left: 0;
+  top: 0;
+  color: rgba(148, 163, 184, 0.6);
+  font-size: 1.2em;
+  line-height: 1;
+}
+
+.post-article__quote {
+  margin: 0;
+  padding-left: 1.2rem;
+  border-left: 3px solid rgba(148, 163, 184, 0.45);
+  font-style: italic;
+  opacity: 0.8;
 }
 
 @media (max-width: 640px) {
@@ -240,6 +483,21 @@ const formatPublished = (value?: string) => {
 
   .post-main {
     padding-inline: 1rem;
+  }
+
+  .post-article__meta {
+    gap: 0.85rem;
+    letter-spacing: 0.18rem;
+  }
+
+  .post-article__actions {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .post-article__action {
+    width: 100%;
+    text-align: center;
   }
 }
 </style>

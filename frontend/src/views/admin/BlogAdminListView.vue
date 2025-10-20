@@ -68,6 +68,8 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive } from "vue";
 import { RouterLink } from "vue-router";
+import { formatPublishedDate } from "../../lib/blog";
+import { API_BASE_URL } from "../../lib/env";
 
 type BlogListItem = {
   blog: string;
@@ -80,9 +82,6 @@ type BlogListResponse = {
   data?: BlogListItem[];
 };
 
-const API_BASE =
-  (import.meta.env.VITE_API_URL as string | undefined)?.replace(/\/$/, "") ?? "";
-
 const state = reactive({
   loading: true,
   error: null as string | null,
@@ -93,7 +92,7 @@ const fetchPosts = async () => {
   state.loading = true;
   state.error = null;
   try {
-    const response = await fetch(`${API_BASE}/blogs`);
+    const response = await fetch(`${API_BASE_URL}/blogs`);
     if (!response.ok) {
       throw new Error(`Unable to fetch posts (${response.status})`);
     }
@@ -120,22 +119,7 @@ const sortedPosts = computed(() =>
   }),
 );
 
-const formatPublished = (value?: string) => {
-  if (!value) {
-    return "Unpublished";
-  }
-
-  const timestamp = Date.parse(value);
-  if (Number.isNaN(timestamp)) {
-    return value;
-  }
-
-  return new Intl.DateTimeFormat("en-US", {
-    year: "numeric",
-    month: "short",
-    day: "2-digit",
-  }).format(timestamp);
-};
+const formatPublished = formatPublishedDate;
 
 const confirmDelete = async (blogId: string) => {
   const proceed = window.confirm("Delete this blog post? This action cannot be undone.");
@@ -144,9 +128,12 @@ const confirmDelete = async (blogId: string) => {
   }
 
   try {
-    const response = await fetch(`${API_BASE}/blogs/${encodeURIComponent(blogId)}`, {
-      method: "DELETE",
-    });
+    const response = await fetch(
+      `${API_BASE_URL}/blogs/${encodeURIComponent(blogId)}`,
+      {
+        method: "DELETE",
+      },
+    );
     if (!response.ok) {
       throw new Error(`Failed to delete post (${response.status})`);
     }
