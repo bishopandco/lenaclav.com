@@ -1,6 +1,7 @@
 import { createApp } from "vue";
 import "./style.css";
 import App from "./App.vue";
+import router from "./router";
 
 const GA_MEASUREMENT_ID = "G-QWSBTLWWEV";
 
@@ -28,5 +29,4 @@ const loadAnalytics = () => {
 if (import.meta.env.PROD) {
   loadAnalytics();
 }
-
-createApp(App).mount("#app");
+createApp(App).use(router).mount("#app");
