@@ -28,29 +28,52 @@
         </p>
       </header>
 
-      <div class="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+      <div
+        v-if="state.loading"
+        class="rounded border border-white/15 bg-white/5 p-6 text-sm uppercase tracking-[0.3em] text-white/70"
+        role="status"
+      >
+        Loading events…
+      </div>
+      <div
+        v-else-if="state.error"
+        class="rounded border border-rose-200/40 bg-rose-500/10 p-6 text-sm uppercase tracking-[0.2em] text-rose-100"
+        role="alert"
+      >
+        {{ state.error }}
+      </div>
+      <div
+        v-else-if="displayEvents.length === 0"
+        class="rounded border border-white/15 bg-white/5 p-6 text-sm uppercase tracking-[0.3em] text-white/70"
+      >
+        No upcoming events yet. Check back soon.
+      </div>
+      <div v-else class="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
         <article
-          v-for="event in events"
+          v-for="event in displayEvents"
           :key="event.id"
           class="flex h-full flex-col rounded border border-white/20 bg-white/5 p-6 backdrop-blur"
         >
-          <p class="text-xs uppercase tracking-[0.35em] text-white/60">{{ event.dateLabel }}</p>
-          <h3 class="mt-4 text-xl font-semibold">{{ event.venue }}</h3>
-          <p class="text-sm uppercase tracking-[0.3em] text-white/50">{{ event.city }}</p>
+          <p class="text-xs uppercase tracking-[0.35em] text-white/60">
+            {{ event.dateLabel }}
+          </p>
+          <h3 class="mt-4 text-xl font-semibold">{{ event.title }}</h3>
+          <p class="text-sm uppercase tracking-[0.3em] text-white/50">
+            {{ event.location }}
+          </p>
           <p class="mt-4 text-sm leading-relaxed text-white/80">{{ event.description }}</p>
           <div class="mt-6 flex flex-wrap gap-3">
-            <button
-              type="button"
-              class="rounded-full border border-white/40 px-5 py-2 text-xs uppercase tracking-[0.3em] text-white/90 transition hover:border-white hover:bg-white/10"
+            <span
+              class="rounded-full border border-white/40 px-5 py-2 text-xs uppercase tracking-[0.3em] text-white/90"
             >
-              {{ event.ctaPrimary }}
-            </button>
-            <button
-              type="button"
-              class="rounded-full border border-white/0 px-5 py-2 text-xs uppercase tracking-[0.3em] text-white/60 underline-offset-4 transition hover:text-white hover:underline"
+              {{ event.timeBadge }}
+            </span>
+            <span
+              v-if="event.secondaryBadge"
+              class="rounded-full border border-white/20 px-5 py-2 text-xs uppercase tracking-[0.3em] text-white/70"
             >
-              {{ event.ctaSecondary }}
-            </button>
+              {{ event.secondaryBadge }}
+            </span>
           </div>
         </article>
       </div>
@@ -59,40 +82,128 @@
 </template>
 
 <script setup lang="ts">
+import { computed, onMounted, reactive } from "vue";
 import videoSrc from "../../assets/IMG_2778.mp4";
+import { API_BASE_URL } from "../../lib/env";
 
 const props = defineProps<{ isActive: boolean; prefersReducedMotion: boolean }>();
 
-const events = [
-  {
-    id: "bk-studio-night",
-    dateLabel: "APR 24 · BROOKLYN",
-    venue: "The FPO Studio Night",
-    city: "BROOKLYN, NY",
-    description:
-      "Intimate release preview. Dark room, late start, heavy bass. Doors at FPO, set time at FPO.",
-    ctaPrimary: "Tickets",
-    ctaSecondary: "RSVP",
-  },
-  {
-    id: "la-warehouse",
-    dateLabel: "MAY 09 · LOS ANGELES",
-    venue: "FPO Arts District Warehouse",
-    city: "LOS ANGELES, CA",
-    description:
-      "Pop-up gallery performance in a borrowed warehouse. Visual projections, limited capacity, merch drop.",
-    ctaPrimary: "Hold My Spot",
-    ctaSecondary: "Add To Calendar",
-  },
-  {
-    id: "chi-festival",
-    dateLabel: "JUN 16 · CHICAGO",
-    venue: "FPO Riverfront Festival",
-    city: "CHICAGO, IL",
-    description:
-      "Outdoor stage takeover. Mid-set collaborator cameo, dripping visuals, afterparty somewhere secret.",
-    ctaPrimary: "Waitlist",
-    ctaSecondary: "Map",
-  },
-] as const;
+type EventRecord = {
+  event: string;
+  title: string;
+  description: string;
+  location?: string | null;
+  startAt?: string | null;
+  endAt?: string | null;
+};
+
+type EventListResponse = {
+  data?: EventRecord[];
+};
+
+const state = reactive({
+  loading: true,
+  error: null as string | null,
+  events: [] as EventRecord[],
+});
+
+const fetchEvents = async () => {
+  state.loading = true;
+  state.error = null;
+  try {
+    const response = await fetch(`${API_BASE_URL}/events`);
+    if (!response.ok) {
+      throw new Error(`Unable to fetch events (${response.status})`);
+    }
+    const payload = (await response.json()) as EventListResponse;
+    state.events = payload.data ?? [];
+  } catch (error) {
+    const message =
+      error instanceof Error ? error.message : "Something went wrong loading events.";
+    state.error = message;
+  } finally {
+    state.loading = false;
+  }
+};
+
+onMounted(() => {
+  void fetchEvents();
+});
+
+const parseDate = (value?: string | null) => {
+  if (!value) {
+    return null;
+  }
+  const timestamp = Date.parse(value);
+  if (Number.isNaN(timestamp)) {
+    return null;
+  }
+  return new Date(timestamp);
+};
+
+const isSameDay = (left: Date, right: Date) =>
+  left.getFullYear() === right.getFullYear() &&
+  left.getMonth() === right.getMonth() &&
+  left.getDate() === right.getDate();
+
+const makeDateLabel = (date: Date | null) => {
+  if (!date) {
+    return "DATE TBA";
+  }
+  return new Intl.DateTimeFormat("en-US", {
+    month: "short",
+    day: "2-digit",
+    year: "numeric",
+  })
+    .format(date)
+    .toUpperCase();
+};
+
+const timeFormatter = new Intl.DateTimeFormat("en-US", {
+  hour: "numeric",
+  minute: "2-digit",
+});
+
+const makeStartBadge = (date: Date | null) => {
+  if (!date) {
+    return "TIMING TBD";
+  }
+  return `Starts ${timeFormatter.format(date)}`;
+};
+
+const makeSecondaryBadge = (start: Date | null, end: Date | null) => {
+  if (!end) {
+    return "";
+  }
+  if (start && isSameDay(start, end)) {
+    return `Ends ${timeFormatter.format(end)}`;
+  }
+  return `Through ${makeDateLabel(end)}`;
+};
+
+const sortedEvents = computed(() =>
+  [...state.events].sort((a, b) => {
+    const left = parseDate(a.startAt);
+    const right = parseDate(b.startAt);
+    const leftTime = left ? left.getTime() : Number.POSITIVE_INFINITY;
+    const rightTime = right ? right.getTime() : Number.POSITIVE_INFINITY;
+    return leftTime - rightTime;
+  }),
+);
+
+const displayEvents = computed(() =>
+  sortedEvents.value.map((event) => {
+    const start = parseDate(event.startAt);
+    const end = parseDate(event.endAt);
+    return {
+      id: event.event,
+      title: event.title ?? "Untitled Event",
+      description: event.description ?? "Details coming soon.",
+      location: (event.location ?? "Location TBA").toUpperCase(),
+      dateLabel: makeDateLabel(start),
+      timeBadge: makeStartBadge(start),
+      secondaryBadge: makeSecondaryBadge(start, end),
+    };
+  }),
+);
 </script>
