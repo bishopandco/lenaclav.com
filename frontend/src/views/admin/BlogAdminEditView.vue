@@ -130,7 +130,7 @@ import {
   parseBlogBody,
 } from "../../lib/blog";
 import type { BlogBodyBlock } from "../../lib/blog";
-import { API_BASE_URL } from "../../lib/env";
+import { apiFetch } from "../../lib/http";
 
 type Mode = "create" | "edit";
 
@@ -170,9 +170,7 @@ const loadPost = async (postId: string) => {
   state.error = null;
   state.success = false;
   try {
-    const response = await fetch(
-      `${API_BASE_URL}/blogs/${encodeURIComponent(postId)}`,
-    );
+    const response = await apiFetch(`/blogs/${encodeURIComponent(postId)}`);
     if (response.status === 404) {
       throw new Error("Post not found.");
     }
@@ -244,7 +242,7 @@ const handleSubmit = async () => {
 
   try {
     if (props.mode === "create") {
-      const response = await fetch(`${API_BASE_URL}/blogs`, {
+      const response = await apiFetch("/blogs", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
@@ -259,7 +257,7 @@ const handleSubmit = async () => {
         params: { id: created.blog },
       });
     } else {
-      const response = await fetch(`${API_BASE_URL}/blogs`, {
+      const response = await apiFetch("/blogs", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -297,12 +295,9 @@ const handleDelete = async () => {
   state.submitting = true;
   state.error = null;
   try {
-    const response = await fetch(
-      `${API_BASE_URL}/blogs/${encodeURIComponent(props.id)}`,
-      {
-        method: "DELETE",
-      },
-    );
+    const response = await apiFetch(`/blogs/${encodeURIComponent(props.id)}`, {
+      method: "DELETE",
+    });
     if (!response.ok) {
       throw new Error(`Failed to delete post (${response.status})`);
     }

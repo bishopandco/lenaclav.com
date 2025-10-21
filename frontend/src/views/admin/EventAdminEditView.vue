@@ -123,7 +123,7 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive, watch } from "vue";
 import { RouterLink, useRouter } from "vue-router";
-import { API_BASE_URL } from "../../lib/env";
+import { apiFetch } from "../../lib/http";
 
 type Mode = "create" | "edit";
 
@@ -165,9 +165,7 @@ const loadEvent = async (eventId: string) => {
   state.error = null;
   state.success = false;
   try {
-    const response = await fetch(
-      `${API_BASE_URL}/events/${encodeURIComponent(eventId)}`,
-    );
+    const response = await apiFetch(`/events/${encodeURIComponent(eventId)}`);
     if (response.status === 404) {
       throw new Error("Event not found.");
     }
@@ -256,7 +254,7 @@ const handleSubmit = async () => {
 
   try {
     if (props.mode === "create") {
-      const response = await fetch(`${API_BASE_URL}/events`, {
+      const response = await apiFetch("/events", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
@@ -274,7 +272,7 @@ const handleSubmit = async () => {
       if (!form.createdAt) {
         throw new Error("Missing event metadata. Reload and try again.");
       }
-      const response = await fetch(`${API_BASE_URL}/events`, {
+      const response = await apiFetch("/events", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -311,12 +309,9 @@ const handleDelete = async () => {
   state.submitting = true;
   state.error = null;
   try {
-    const response = await fetch(
-      `${API_BASE_URL}/events/${encodeURIComponent(props.id)}`,
-      {
-        method: "DELETE",
-      },
-    );
+    const response = await apiFetch(`/events/${encodeURIComponent(props.id)}`, {
+      method: "DELETE",
+    });
     if (!response.ok) {
       throw new Error(`Failed to delete event (${response.status})`);
     }

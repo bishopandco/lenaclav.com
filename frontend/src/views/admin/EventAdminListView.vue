@@ -82,7 +82,7 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive } from "vue";
 import { RouterLink } from "vue-router";
-import { API_BASE_URL } from "../../lib/env";
+import { apiFetch } from "../../lib/http";
 
 type EventListItem = {
   event: string;
@@ -107,7 +107,7 @@ const fetchEvents = async () => {
   state.loading = true;
   state.error = null;
   try {
-    const response = await fetch(`${API_BASE_URL}/events`);
+    const response = await apiFetch("/events");
     if (!response.ok) {
       throw new Error(`Unable to fetch events (${response.status})`);
     }
@@ -156,12 +156,9 @@ const confirmDelete = async (eventId: string) => {
   }
 
   try {
-    const response = await fetch(
-      `${API_BASE_URL}/events/${encodeURIComponent(eventId)}`,
-      {
-        method: "DELETE",
-      },
-    );
+    const response = await apiFetch(`/events/${encodeURIComponent(eventId)}`, {
+      method: "DELETE",
+    });
     if (!response.ok) {
       throw new Error(`Failed to delete event (${response.status})`);
     }

@@ -6,6 +6,9 @@
         <RouterLink class="admin-nav__link" to="/admin/events">Events</RouterLink>
         <RouterLink class="admin-nav__link" to="/admin/blogs">Blog Posts</RouterLink>
         <RouterLink class="admin-nav__link" to="/blog">View Site</RouterLink>
+        <button v-if="auth.isAuthenticated.value" type="button" class="admin-nav__link admin-nav__button" @click="signOut">
+          Sign Out
+        </button>
       </nav>
     </header>
 
@@ -16,7 +19,16 @@
 </template>
 
 <script setup lang="ts">
-import { RouterLink, RouterView } from "vue-router";
+import { RouterLink, RouterView, useRouter } from "vue-router";
+import { useAuthStore } from "../../stores/auth";
+
+const auth = useAuthStore();
+const router = useRouter();
+
+const signOut = () => {
+  auth.logout();
+  void router.push("/signin");
+};
 </script>
 
 <style scoped>
@@ -59,6 +71,13 @@ import { RouterLink, RouterView } from "vue-router";
   text-decoration: none;
   opacity: 0.7;
   transition: opacity 150ms ease;
+}
+
+.admin-nav__button {
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
 }
 
 .admin-nav__link.router-link-active {

@@ -91,7 +91,7 @@ import {
   parseBlogBody,
 } from "../lib/blog";
 import type { BlogBodyBlock } from "../lib/blog";
-import { API_BASE_URL } from "../lib/env";
+import { apiFetch } from "../lib/http";
 
 type BlogResponse = {
   blog: string;
@@ -123,9 +123,7 @@ const fetchPost = async (postId: string) => {
   state.error = null;
   state.post = null;
   try {
-    const response = await fetch(
-      `${API_BASE_URL}/blogs/${encodeURIComponent(postId)}`,
-    );
+    const response = await apiFetch(`/blogs/${encodeURIComponent(postId)}`);
     if (response.status === 404) {
       state.post = null;
       state.loading = false;

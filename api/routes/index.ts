@@ -1,5 +1,6 @@
 import type { Hono } from "hono";
 import { registerHealthRoutes } from "./health";
+import authRoutes from "./authRoutes";
 
 export const registerRoutes = (app: Hono) => {
   app.get("/", (c) =>
@@ -8,5 +9,6 @@ export const registerRoutes = (app: Hono) => {
     }),
   );
 
+  app.route("/auth", authRoutes);
   registerHealthRoutes(app);
 };

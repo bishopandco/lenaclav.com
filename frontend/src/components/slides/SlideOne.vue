@@ -84,7 +84,7 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive } from "vue";
 import videoSrc from "../../assets/IMG_2778.mp4";
-import { API_BASE_URL } from "../../lib/env";
+import { apiFetch } from "../../lib/http";
 
 const props = defineProps<{ isActive: boolean; prefersReducedMotion: boolean }>();
 
@@ -111,7 +111,7 @@ const fetchEvents = async () => {
   state.loading = true;
   state.error = null;
   try {
-    const response = await fetch(`${API_BASE_URL}/events`);
+    const response = await apiFetch("/events");
     if (!response.ok) {
       throw new Error(`Unable to fetch events (${response.status})`);
     }

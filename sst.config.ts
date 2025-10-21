@@ -44,13 +44,43 @@ export default $config({
       },
     });
 
+    const userPool = new sst.aws.CognitoUserPool("LenaclavUserPool", {
+      usernames: ["email"],
+      transform: {
+        userPool: {
+          autoVerifiedAttributes: ["email"],
+        },
+      },
+      verify: {
+        emailSubject: "Verify your lenaclav.com account",
+        emailMessage: "Your verification code is {####}",
+      },
+    });
+
+    const userPoolClient = userPool.addClient("LenaclavWeb", {
+      transform: {
+        client: {
+          accessTokenValidity: 24,
+          idTokenValidity: 24,
+          refreshTokenValidity: 30,
+          tokenValidityUnits: {
+            accessToken: "hours",
+            idToken: "hours",
+            refreshToken: "days",
+          },
+        },
+      },
+    });
+
     const api = new sst.aws.Function("Api", {
       handler: "api/index.handler",
       runtime: "nodejs20.x",
       url: true,
-      link: [table],
+      link: [table, userPool, userPoolClient],
       environment: {
         DYNAMODB_TABLE_NAME: table.name,
+        COGNITO_USER_POOL_ID: userPool.id,
+        COGNITO_CLIENT_ID: userPoolClient.id,
       },
     });
 
@@ -61,6 +91,9 @@ export default $config({
       },
       environment: {
         VITE_API_URL: api.url,
+        VITE_AWS_REGION: process.env.AWS_REGION || "us-east-1",
+        VITE_COGNITO_USER_POOL_ID: userPool.id,
+        VITE_COGNITO_CLIENT_ID: userPoolClient.id,
       },
       domain: {
         name: domainName,

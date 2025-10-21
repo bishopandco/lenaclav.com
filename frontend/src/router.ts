@@ -1,4 +1,5 @@
 import { createRouter, createWebHistory } from "vue-router";
+import { useAuthStore } from "./stores/auth";
 
 const router = createRouter({
   history: createWebHistory(),
@@ -25,7 +26,23 @@ const router = createRouter({
       props: true,
     },
     {
+      path: "/signin",
+      name: "sign-in",
+      component: () => import("./views/SignInView.vue"),
+    },
+    {
+      path: "/signup",
+      name: "sign-up",
+      component: () => import("./views/SignUpView.vue"),
+    },
+    {
+      path: "/reset-password",
+      name: "reset-password",
+      component: () => import("./views/ResetPasswordView.vue"),
+    },
+    {
       path: "/admin",
+      meta: { requiresAuth: true },
       component: () => import("./views/admin/AdminLayout.vue"),
       children: [
         {
@@ -70,6 +87,18 @@ const router = createRouter({
     },
   ],
   scrollBehavior: () => ({ top: 0 }),
+});
+
+router.beforeEach(async (to) => {
+  const auth = useAuthStore();
+  await auth.ensureSession();
+  if (to.meta.requiresAuth && !auth.isAuthenticated.value) {
+    return {
+      path: "/signin",
+      query: { redirect: to.fullPath },
+    };
+  }
+  return true;
 });
 
 export default router;

@@ -49,6 +49,23 @@
               blog
             </RouterLink>
           </li>
+          <li aria-hidden="true">|</li>
+          <li v-if="auth.isAuthenticated.value">
+            <RouterLink class="hover:underline transition-colors" to="/admin">
+              admin
+            </RouterLink>
+          </li>
+          <li v-else>
+            <RouterLink class="hover:underline transition-colors" to="/signin">
+              sign in
+            </RouterLink>
+          </li>
+          <li v-if="auth.isAuthenticated.value" aria-hidden="true">|</li>
+          <li v-if="auth.isAuthenticated.value">
+            <button class="hover:underline transition-colors bg-transparent border-0 uppercase tracking-wide text-sm" type="button" @click="handleSignOut">
+              sign out
+            </button>
+          </li>
         </ul>
       </nav>
     </header>
@@ -110,11 +127,14 @@
 
 <script setup lang="ts">
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from "vue";
-import { RouterLink } from "vue-router";
+import { RouterLink, useRouter } from "vue-router";
 import type { SlideDefinition } from "../components/slides";
 import { slideDefinitions } from "../components/slides";
+import { useAuthStore } from "../stores/auth";
 
 const slides: SlideDefinition[] = slideDefinitions;
+const auth = useAuthStore();
+const router = useRouter();
 
 const activeIndex = ref(0);
 const viewportRef = ref<HTMLElement | null>(null);
@@ -157,6 +177,11 @@ const progressLabel = computed(() => {
   const current = (activeIndex.value + 1).toString().padStart(2, "0");
   return `${current} / ${totalSlidesLabel} — ${activeSlide.value.kicker}`;
 });
+
+const handleSignOut = () => {
+  auth.logout();
+  void router.push("/");
+};
 
 const instructionLabel = computed(() =>
   prefersReducedMotion.value

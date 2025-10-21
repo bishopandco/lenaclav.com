@@ -69,7 +69,7 @@
 import { computed, onMounted, reactive } from "vue";
 import { RouterLink } from "vue-router";
 import { formatPublishedDate } from "../../lib/blog";
-import { API_BASE_URL } from "../../lib/env";
+import { apiFetch } from "../../lib/http";
 
 type BlogListItem = {
   blog: string;
@@ -92,7 +92,7 @@ const fetchPosts = async () => {
   state.loading = true;
   state.error = null;
   try {
-    const response = await fetch(`${API_BASE_URL}/blogs`);
+    const response = await apiFetch("/blogs");
     if (!response.ok) {
       throw new Error(`Unable to fetch posts (${response.status})`);
     }
@@ -128,12 +128,9 @@ const confirmDelete = async (blogId: string) => {
   }
 
   try {
-    const response = await fetch(
-      `${API_BASE_URL}/blogs/${encodeURIComponent(blogId)}`,
-      {
-        method: "DELETE",
-      },
-    );
+    const response = await apiFetch(`/blogs/${encodeURIComponent(blogId)}`, {
+      method: "DELETE",
+    });
     if (!response.ok) {
       throw new Error(`Failed to delete post (${response.status})`);
     }

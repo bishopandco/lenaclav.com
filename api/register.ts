@@ -8,6 +8,9 @@ import { EventsController } from "./controllers/EventsController";
 import { EventModel } from "./models/EventModel";
 import { PostsController } from "./controllers/PostsController";
 import { PostModel } from "./models/PostModel";
+import { UserController } from "./controllers/UserController";
+import { UserModel } from "./models/UserModel";
+import { authMiddleware } from "./middleware/authMiddleware";
 
 export const registerApp = (app: Hono) => {
   const tableName = process.env.DYNAMODB_TABLE_NAME;
@@ -25,9 +28,12 @@ export const registerApp = (app: Hono) => {
   const documentClient = DynamoDBDocumentClient.from(rawClient);
 
   BaseModel.configure({ client: documentClient, table: tableName });
-  BaseModel.register(PostModel, BlogModel, EventModel);
+  BaseModel.register(PostModel, BlogModel, EventModel, UserModel);
+
+  app.use("*", authMiddleware);
 
   PostsController.routes(app);
   BlogsController.routes(app);
   EventsController.routes(app);
+  UserController.routes(app);
 };
